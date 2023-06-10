@@ -2,11 +2,13 @@ defmodule SendServer do
   use GenServer
 
   def init(args) do
-    IO.puts("Received arguments: #{inspect(args)}")
-    max_retries = Keyword.get(args, :max_retries, 3)
-    state = %{emails: [], max_retries: max_retries}
     Process.send_after(self(), :retry, 5000)
-    {:ok, state}
+
+    {:ok,
+     %{
+       emails: [],
+       max_retries: Keyword.get(args, :max_retries, 3)
+     }}
   end
 
   def handle_call(:get_state, _from, state) do
@@ -14,11 +16,7 @@ defmodule SendServer do
   end
 
   def handle_cast({:send, email}, state) do
-    status =
-      case Sender.send_email(email) do
-        {:ok, _} -> "sent"
-        :error -> "error"
-      end
+    {status, _} = Sender.send_email(email)
 
     emails = [%{email: email, status: status, retries: 0}] ++ state.emails
 
@@ -26,20 +24,16 @@ defmodule SendServer do
   end
 
   def handle_info(:retry, state) do
-    {failed, done} =
+    {errored, done} =
       Enum.split_with(state.emails, fn item ->
-        item.status == "error" && item.retries < state.max_retries
+        item.status == :error && item.retries < state.max_retries
       end)
 
     retried =
-      Enum.map(failed, fn item ->
-        new_status =
-          case Sender.send_email(item.email) do
-            {:ok, _} -> "sent"
-            :error -> "error"
-          end
+      Enum.map(errored, fn item ->
+        {status, _} = Sender.send_email(item.email)
 
-        %{email: item.email, status: new_status, retries: item.retries + 1}
+        %{email: item.email, status: status, retries: item.retries + 1}
       end)
 
     Process.send_after(self(), :retry, 5000)
