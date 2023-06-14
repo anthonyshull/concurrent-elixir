@@ -1,21 +1,7 @@
-# Sender
-
-**TODO: Add description**
-
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `sender` to your list of dependencies in `mix.exs`:
+# Usage
 
 ```elixir
-def deps do
-  [
-    {:sender, "~> 0.1.0"}
-  ]
-end
+%> iex -S mix
+
+iex> Sender.notify_all(emails)
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/sender>.
-
